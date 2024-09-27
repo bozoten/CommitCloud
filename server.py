@@ -73,3 +73,5 @@ async def upload_file(file: UploadFile = File(...)):
         print("File Upload Done Succesfully. Heck yeah!")
 
     return {"message": "File uploaded and record created", "filename": id_commit_message, "data": file_data}
+
+# test
