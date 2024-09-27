@@ -4,6 +4,7 @@ from typing import List, Optional
 from github import Github
 from dotenv import load_dotenv
 import base64
+import json
 
 load_dotenv()
 
@@ -29,6 +30,21 @@ trojan_encoded = base64.b64encode(trojan_content.encode()).decode()
 @app.get("/")
 async def read_root():
     return {"message": "Welcome to Commit Cloud your free file storage provider!"}
+
+@app.get("/all/")
+async def all_files():
+    commits = id_repo.get_commits()
+    commits = list(commits)
+
+    names = []
+    for commit in commits:
+
+        name = commit.commit.message[40:]
+            
+        names.append(name)
+
+    return names
+    
 
 # Endpoint to create a new record in the database
 @app.post("/upload/")
@@ -59,19 +75,21 @@ async def upload_file(file: UploadFile = File(...)):
         sha_var = repo_contents.sha
         print("File Upload Done Succesfully. Heck yeah!")
         
-    id_commit_message = sha_var + "+" + file.filename  
+    id_commit_message = sha_var + file.filename  
 
     # id repo
     try:
-        # if file exists get file & update it
+        # if existing repo
         repo_contents = id_repo.get_contents(trojan_path, ref=branch)
         id_repo.update_file(repo_contents.path, id_commit_message, trojan_encoded, repo_contents.sha, branch=branch)
         print("New File Added kiss kiss")
     except Exception as e:
-        # if file doesn't exist create the file gahahahahahaha 
+        # if new repo
         id_repo.create_file(trojan_path, id_commit_message, trojan_encoded, branch=branch)
         print("File Upload Done Succesfully. Heck yeah!")
 
     return {"message": "File uploaded and record created", "filename": id_commit_message, "data": file_data}
+
+
 
 # test
