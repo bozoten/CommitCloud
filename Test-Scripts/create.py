@@ -3,7 +3,7 @@ import os
 
 # Define the path of the file you want to upload
 file_path = "target.png"  # Change this to your file path
-upload_url = "http://localhost:8000/upload/"  # Update this if your server runs on a different port or domain
+upload_url = "http://localhost:8000/create/"  # Update this if your server runs on a different port or domain
 
 # Check if the file exists
 if not os.path.isfile(file_path):

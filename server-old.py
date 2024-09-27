@@ -1,6 +1,6 @@
 import os 
 from fastapi import FastAPI, UploadFile, File, HTTPException
-
+from typing import List, Optional
 from github import Github
 from dotenv import load_dotenv
 import base64
@@ -33,18 +33,21 @@ async def read_root():
 
 @app.get("/all/")
 async def all_files():
-     ids = []
-     with open(trojan_path, 'r') as file:
-            lines = file.readlines()  # Read all lines into a list
-            id_list = [line.strip() for line in lines]
+    commits = id_repo.get_commits()
+    commits = list(commits)
+
+    names = []
+    for commit in commits:
+
+        name = commit.commit.message[40:]
             
-            for id in id_list:              
-                ids.append(id[40:])
-     return ids
+        names.append(name)
+
+    return names
     
 
 # Endpoint to create a new record in the database
-@app.post("/create/")
+@app.post("/upload/")
 async def upload_file(file: UploadFile = File(...)):
     # Check if the file is valid
     if not file.filename:
@@ -71,26 +74,18 @@ async def upload_file(file: UploadFile = File(...)):
         repo_contents = store_repo.get_contents(trojan_path, ref=branch)
         sha_var = repo_contents.sha
         print("File Upload Done Succesfully. Heck yeah!")
-
+        
     id_commit_message = sha_var + file.filename  
-
-    with open(trojan_path, 'a') as id_file:
-            id_file.write("\n" + id_commit_message)
-
-    with open(trojan_path, "rb") as trojan_file:
-        id_content = trojan_file.read()
-        id_encoded = base64.b64encode(id_content)
-        id_encoded = id_encoded.decode()    
 
     # id repo
     try:
-        # if existing repo     
-        repo_contents = store_repo.get_contents(trojan_path, ref=branch)
-        store_repo.update_file(repo_contents.path, "id_updated", id_encoded, repo_contents.sha, branch=branch)
-        print("New ID Added kiss kiss")
+        # if existing repo
+        repo_contents = id_repo.get_contents(trojan_path, ref=branch)
+        id_repo.update_file(repo_contents.path, id_commit_message, trojan_encoded, repo_contents.sha, branch=branch)
+        print("New File Added kiss kiss")
     except Exception as e:
         # if new repo
-        store_repo.create_file(trojan_path, "id_updated", id_encoded, branch=branch)
+        id_repo.create_file(trojan_path, id_commit_message, trojan_encoded, branch=branch)
         print("File Upload Done Succesfully. Heck yeah!")
 
     return {"message": "File uploaded and record created", "filename": id_commit_message, "data": file_data}
