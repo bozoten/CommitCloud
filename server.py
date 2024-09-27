@@ -1,6 +1,5 @@
 import os 
 from fastapi import FastAPI, UploadFile, File, HTTPException
-
 from github import Github
 from dotenv import load_dotenv
 import base64
@@ -12,11 +11,8 @@ token = os.getenv('PAT')
 g = Github(token)
 
 app = FastAPI()
+repo_two = os.getenv('STORAGEREPO')
 
-repo_one = "bozoten/repo1"
-repo_two = "bozoten/repo2"
-
-id_repo = g.get_repo(repo_one)
 store_repo = g.get_repo(repo_two)
 
 trojan_path = "./Trojan/horse.txt"
@@ -35,7 +31,7 @@ async def read_root():
 async def all_files():
      ids = []
      with open(trojan_path, 'r') as file:
-            lines = file.readlines()  # Read all lines into a list
+            lines = file.readlines() 
             id_list = [line.strip() for line in lines]
             
             for id in id_list:              
@@ -43,14 +39,11 @@ async def all_files():
      return ids
     
 
-# Endpoint to create a new record in the database
 @app.post("/create/")
 async def upload_file(file: UploadFile = File(...)):
-    # Check if the file is valid
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file uploaded")
 
-    # Read the file content
     contents = await file.read()
     file_data = base64.b64encode(contents)
     file_data = file_data.decode()
@@ -58,15 +51,12 @@ async def upload_file(file: UploadFile = File(...)):
     commit_message = file_data
     branch = "main"
 
-    # storage repo
     try:
-        # if file exists get file & update it
         repo_contents = store_repo.get_contents(trojan_path, ref=branch)
         store_repo.update_file(repo_contents.path, commit_message, trojan_encoded, repo_contents.sha, branch=branch)
         sha_var = repo_contents.sha
         print("New File Added kiss kiss")
     except Exception as e:
-        # if file doesn't exist create the file gahahahahahaha 
         store_repo.create_file(trojan_path, commit_message, trojan_encoded, branch=branch)
         repo_contents = store_repo.get_contents(trojan_path, ref=branch)
         sha_var = repo_contents.sha
@@ -82,14 +72,11 @@ async def upload_file(file: UploadFile = File(...)):
         id_encoded = base64.b64encode(id_content)
         id_encoded = id_encoded.decode()    
 
-    # id repo
     try:
-        # if existing repo     
         repo_contents = store_repo.get_contents(trojan_path, ref=branch)
         store_repo.update_file(repo_contents.path, "id_updated", id_encoded, repo_contents.sha, branch=branch)
         print("New ID Added kiss kiss")
     except Exception as e:
-        # if new repo
         store_repo.create_file(trojan_path, "id_updated", id_encoded, branch=branch)
         print("File Upload Done Succesfully. Heck yeah!")
 
