@@ -1,5 +1,5 @@
 import os 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Path
 from github import Github
 from dotenv import load_dotenv
 import base64
@@ -82,6 +82,18 @@ async def upload_file(file: UploadFile = File(...)):
 
     return {"message": "File uploaded and record created", "filename": id_commit_message, "data": file_data}
 
+@app.delete("/delete/")
+async def delete(id: int):
+     with open(trojan_path, 'r') as file:
+            lines = file.readlines() 
 
+     if id <= len(lines):
+          lines.pop(id)
+
+     with open(trojan_path, 'w') as file:
+          file.writelines(lines)
+
+     return "Deleted"     
+               
 
 # test
