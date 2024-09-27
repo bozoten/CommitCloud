@@ -1,10 +1,11 @@
-import os 
+import os
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from typing import List, Optional
 from github import Github
 from dotenv import load_dotenv
 import base64
-import json
 
 load_dotenv()
 
@@ -29,7 +30,7 @@ trojan_encoded = base64.b64encode(trojan_content.encode()).decode()
 
 @app.get("/")
 async def read_root():
-    return {"message": "Welcome to Commit Cloud your free file storage provider!"}
+    return FileResponse('index.html')
 
 @app.get("/all/")
 async def all_files():

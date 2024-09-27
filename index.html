@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commit Cloud - File Storage</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        #file-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        #file-list li {
+            background-color: #f0f0f0;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Commit Cloud - File Storage</h1>
+    
+    <h2>Upload a File</h2>
+    <input type="file" id="file-input">
+    <button onclick="uploadFile()">Upload</button>
+    
+    <h2>All Files</h2>
+    <button onclick="getAllFiles()">Refresh File List</button>
+    <ul id="file-list"></ul>
+
+    <script>
+        async function uploadFile() {
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file to upload');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/upload/', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                alert(`File uploaded successfully: ${result.filename}`);
+                getAllFiles();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while uploading the file');
+            }
+        }
+
+        async function getAllFiles() {
+            try {
+                const response = await fetch('/all/');
+                const files = await response.json();
+                
+                const fileList = document.getElementById('file-list');
+                fileList.innerHTML = '';
+                
+                files.forEach(file => {
+                    const li = document.createElement('li');
+                    li.textContent = file;
+                    fileList.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while fetching the file list');
+            }
+        }
+
+        // Load files when the page loads
+        getAllFiles();
+    </script>
+</body>
+</html>
