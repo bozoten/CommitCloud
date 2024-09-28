@@ -9,6 +9,118 @@
 - Secure Authentication: Users authenticate via their GitHub username and PAT (Personal Access Token).
 - Storage Management: File data is stored across GitHub commits, with large files split into chunks.
 
+## Quick Start
+
+This section will guide you through setting up the FastAPI project and explain how to interact with the API for handling file uploads, downloading files, and listing commit messages from GitHub repositories.
+
+### Prerequisites
+
+Ensure you have the following installed on your machine:
+- **Python 3.7+**
+- **Git**
+- **pip** (Python package manager)
+- **FastAPI** and **Uvicorn** (for serving the FastAPI app)
+  
+You also need:
+- A **GitHub personal access token (PAT)** with permissions to access repositories.
+- **Two GitHub repositories** named repo1 and repo 2 where you want to upload and store files.
+
+### 1. Clone the Project
+
+```bash
+git clone https://github.com/bozoten/CommitCloud.git
+cd CommitCloud
+```
+
+### 2. Install Dependencies
+
+Run the following command to install the necessary Python libraries:
+
+```bash
+pip install fastapi uvicorn PyGithub
+```
+
+### 3. Running the App
+
+Start the FastAPI application using Uvicorn:
+
+```bash
+uvicorn main:app --reload
+```
+
+By default, this will launch the app at `http://127.0.0.1:8000`.
+
+### 4. Setup GitHub Access
+
+- Create a **GitHub Personal Access Token (PAT)** with `repo` permissions.
+- Replace `repo_one` and `repo_two` with your actual GitHub repository names in the script.
+
+---
+
+# API Endpoints
+
+Here are the available API routes for interacting with the service:
+
+### 1. Root (`/`)
+
+**Method:** `GET`
+
+Displays the HTML content from the `index.html` file.
+
+### 2. List All Commit Messages (`/all/`)
+
+**Method:** `GET`
+
+Fetches the commit messages from the repository.
+
+**Query Parameters:**
+- `username`: Your GitHub username.
+- `pat`: Your GitHub personal access token (PAT).
+
+**Example:**
+```bash
+curl -X 'GET' \
+  'http://127.0.0.1:8000/all/?username=your_github_username&pat=your_pat' \
+  -H 'accept: application/json'
+```
+
+### 3. Upload a File (`/create/`)
+
+**Method:** `POST`
+
+Uploads a file to your GitHub repositories.
+
+**Form Parameters:**
+- `file`: The file to upload.
+- `username`: Your GitHub username.
+- `pat`: Your GitHub personal access token (PAT).
+
+**Example:**
+```bash
+curl -X 'POST' \
+  'http://127.0.0.1:8000/create/' \
+  -F 'file=@<file_path>' \
+  -F 'username=your_github_username' \
+  -F 'pat=your_pat'
+```
+
+### 4. Download a File (`/download/`)
+
+**Method:** `POST`
+
+Downloads a file based on the provided commit SHA ID.
+
+**Form Parameters:**
+- `id`: The commit ID of the file.
+- `username`: Your GitHub username.
+- `pat`: Your GitHub personal access token (PAT).
+
+**Example:**
+```bash
+curl -X 'POST' \
+  'http://127.0.0.1:8000/download/?id=commit_id&username=your_github_username&pat=your_pat' \
+  -H 'accept: application/json'
+```
 ## HTML Interface
 
 ### `index.html`
