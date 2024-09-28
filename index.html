@@ -23,6 +23,22 @@
             margin: 5px 0;
             padding: 10px;
             border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .download-btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 3px;
         }
     </style>
 </head>
@@ -51,7 +67,7 @@
             formData.append('file', file);
             
             try {
-                const response = await fetch('/upload/', {
+                const response = await fetch('/create/', {
                     method: 'POST',
                     body: formData
                 });
@@ -75,7 +91,16 @@
                 
                 files.forEach(file => {
                     const li = document.createElement('li');
-                    li.textContent = file;
+                    const fileNameSpan = document.createElement('span');
+                    fileNameSpan.textContent = file.substring(40);
+                    
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.textContent = 'Download';
+                    downloadBtn.className = 'download-btn';
+                    downloadBtn.onclick = () => downloadFile(file);
+                    
+                    li.appendChild(fileNameSpan);
+                    li.appendChild(downloadBtn);
                     fileList.appendChild(li);
                 });
             } catch (error) {
@@ -83,6 +108,32 @@
                 alert('An error occurred while fetching the file list');
             }
         }
+
+        async function downloadFile(fileId) {
+    try {
+        const response = await fetch(`/download/?id=${encodeURIComponent(fileId)}`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = fileId.substring(40); 
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        } else {
+            throw new Error('File download failed');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while downloading the file');
+    }
+}
+
         getAllFiles();
     </script>
 </body>
