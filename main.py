@@ -17,10 +17,10 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # You can specify the allowed origins here
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods (GET, POST, OPTIONS, etc.)
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],  
+    allow_headers=["*"],  
 )
 
 repo_one = "bozoten/repo1"
@@ -55,158 +55,76 @@ async def all_files():
 
     return names
     
-
-# Endpoint to create a new record in the database
-@app.post("/upload/")
+@app.post("/create/")
 async def upload_file(file: UploadFile = File(...)):
-    # Check if the file is valid
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file uploaded")
 
-    # Read the file content
     contents = await file.read()
-    file_data = base64.b64encode(contents)
-    file_data = file_data.decode()
-
-    commit_message = file_data
+    file_data = base64.b64encode(contents).decode()
     branch = "main"
+    batch_size = 10000
 
-    # storage repo
-    try:
-        # if file exists get file & update it
-        repo_contents = store_repo.get_contents(trojan_path, ref=branch)
-        store_repo.update_file(repo_contents.path, commit_message, trojan_encoded, repo_contents.sha, branch=branch)
-        commits = store_repo.get_commits()
-        last_commit = commits[0]
-        sha_var = last_commit.sha
-        print("New File Added kiss kiss")
-    except Exception as e:
-        # if file doesn't exist create the file gahahahahahaha 
-        store_repo.create_file(trojan_path, commit_message, trojan_encoded, branch=branch)
-        commits = store_repo.get_commits()
-        last_commit = commits[0]
-        sha_var = last_commit.sha
-        print("File Upload Done Succesfully. Heck yeah!")
-        
-    id_commit_message = sha_var + file.filename  
+    if len(file_data) > batch_size:
+        sha_start = None
+        for i in range(0, len(file_data), batch_size):
+            batch = file_data[i:i + batch_size]
+            commit_message = batch
+            print("Batch Upload is going smoothly bbg :3 ")
+            try:
+                repo_contents = store_repo.get_contents(trojan_path, ref=branch)
+                store_repo.update_file(repo_contents.path, commit_message, batch, repo_contents.sha, branch=branch)
+            except:
+                store_repo.create_file(trojan_path, commit_message, batch, branch=branch)
+            if i == 0:
+                sha_start = store_repo.get_commits()[0].sha
+        sha_end = store_repo.get_commits()[0].sha
+        id_commit_message = f"{sha_start}+{sha_end}+{file.filename}"
+    else:
+        commit_message = file_data
+        try:
+            repo_contents = store_repo.get_contents(trojan_path, ref=branch)
+            store_repo.update_file(repo_contents.path, commit_message, file_data, repo_contents.sha, branch=branch)
+        except:
+            store_repo.create_file(trojan_path, commit_message, file_data, branch=branch)
+        sha = store_repo.get_commits()[0].sha
+        id_commit_message = f"{sha}{file.filename}"
 
-    # id repo
     try:
-        # if existing repo
         repo_contents = id_repo.get_contents(trojan_path, ref=branch)
-        id_repo.update_file(repo_contents.path, id_commit_message, trojan_encoded, repo_contents.sha, branch=branch)
-        print("New File Added kiss kiss")
-    except Exception as e:
-        # if new repo
-        id_repo.create_file(trojan_path, id_commit_message, trojan_encoded, branch=branch)
-        print("File Upload Done Succesfully. Heck yeah!")
+        id_repo.update_file(repo_contents.path, id_commit_message, file_data, repo_contents.sha, branch=branch)
+    except:
+        id_repo.create_file(trojan_path, id_commit_message, file_data, branch=branch)
 
     return {"message": "File uploaded and record created", "filename": id_commit_message, "data": file_data}
 
-
-@app.post("/download?/")
-async def download(id: str):
-    file_name = id[40:]
-    sha_one = id[:40]
-    commit = store_repo.get_commit(sha_one)
-
-    file_data = base64.b64decode(commit.commit.message)
-
-    with open(file_name, 'wb') as file:
-        file.write(file_data)
-
-      # Return the file as a response
-    
-    return FileResponse(file_name, media_type='application/octet-stream', filename=file_name)
-
-
-'''
-High Res Endpoints
-'''
-
-@app.post("/create/")
-async def upload_file(file: UploadFile = File(...)):
-    # Check if the file is valid
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No file uploaded")
-
-    # Read the file content
-    contents = await file.read()
-    target_encode = base64.b64encode(contents)
-    target_encode = target_encode.decode()
-
-    batch_size = 10000
-
-    commit_message = target_encode
-    branch = "main"
-    sha_one = ""
-    for i in range(0, len(target_encode), batch_size):
-        batch = target_encode[i: i + batch_size]
-        commit_message = batch
-        try:
-            # if file exists get file & update it
-            repo_contents = store_repo.get_contents(trojan_path, ref=branch)
-            store_repo.update_file(repo_contents.path, commit_message, trojan_encoded, repo_contents.sha, branch=branch)
-            if (i==0):
-                commits = store_repo.get_commits()
-                first_commit = commits[0]
-                sha_one = first_commit.sha
-            print("Upload is going charmingly :3")
-        except:
-            # if file doesn't exist create the file gahahahahahaha 
-            store_repo.create_file(trojan_path, commit_message, trojan_encoded, branch=branch)
-            if (i==0):
-                commits = store_repo.get_commits()
-                first_commit = commits[0]
-                sha_one = first_commit.sha
-            print("Upload has started pookie bear kiss kiss")
-        
-    commits = store_repo.get_commits()
-    last_commit = commits[0]
-    sha_two = last_commit.sha
-
-    id_commit_message = sha_one + "+" + sha_two + file.filename  
-
-    # id repo
-    try:
-        # if existing repo
-        repo_contents = id_repo.get_contents(trojan_path, ref=branch)
-        id_repo.update_file(repo_contents.path, id_commit_message, trojan_encoded, repo_contents.sha, branch=branch)
-        print("New File Added kiss kiss")
-    except Exception as e:
-        # if new repo
-        id_repo.create_file(trojan_path, id_commit_message, trojan_encoded, branch=branch)
-        print("File Upload Done Succesfully. Heck yeah!")
-
-    return {"message": "File uploaded and record created", "filename": id_commit_message, "data": target_encode}
-
-
 @app.post("/download/")
 async def download(id: str):
-    file_name = id[82:]
-    sha_one = id[:40]
-    sha_two = id[41:81]
-    commits = store_repo.get_commits(sha_two)
+    if '+' in id:
+        sha_start, sha_end, file_name = id.split('+')
+        commits = store_repo.get_commits(sha_end)
 
-    commit_messages = []
-    
-    for commit in commits:
-        commit_messages.append(commit.commit.message)
-        if commit.sha == sha_one:
-            break
-    
-    # Reverse the order to get chronological order
-    commit_messages.reverse()
+        commit_messages = []
+        for commit in commits:
+            commit_messages.append(commit.commit.message)
+            if commit.sha == sha_start:
+                break
 
-    # Join all commit messages
-    file_data = "\n".join(commit_messages)
+        commit_messages.reverse()
+        file_data = "".join(commit_messages)
+    else:
+        sha = id[:40]
+        file_name = id[40:]
+        commit = store_repo.get_commit(sha)
+        file_data = commit.commit.message
+
     decoded_data = base64.b64decode(file_data)
-    
+
     with open(file_name, 'wb') as file:
         file.write(decoded_data)
 
-      # Return the file as a response
+    response = FileResponse(file_name, media_type='application/octet-stream', filename=file_name)
+
     
-    return FileResponse(file_name, media_type='application/octet-stream', filename=file_name)    
-    
-# test
+
+    return response
