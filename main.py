@@ -1,18 +1,11 @@
 import os
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form, Query
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from typing import List, Optional
 from github import Github
-from dotenv import load_dotenv
 import base64
 from fastapi.middleware.cors import CORSMiddleware
-
-load_dotenv()
-
-
-token = os.getenv('PAT')
-g = Github(token)
 
 app = FastAPI()
 
@@ -27,39 +20,44 @@ app.add_middleware(
 repo_one = "bozoten/repo1"
 repo_two = "bozoten/repo2"
 
-id_repo = g.get_repo(repo_one)
-store_repo = g.get_repo(repo_two)
-
 trojan_path = "./Trojan/horse.txt"
 
 with open(trojan_path, 'r') as file:
     trojan_content = file.read()
 
-# encode content to base 64 (github expects files this way) 
 trojan_encoded = base64.b64encode(trojan_content.encode()).decode()
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def read_root():
-    return FileResponse('index.html')
+    with open('index.html', 'r') as f:
+        return f.read()
 
 @app.get("/all/")
-async def all_files():
+async def all_files(username: str = Query(...), pat: str = Query(...)):
+    g = Github(pat)
+    id_repo = g.get_repo(f"{username}/repo1")
     commits = id_repo.get_commits()
     commits = list(commits)
 
     names = []
     for commit in commits:
-
         name = commit.commit.message
-            
         names.append(name)
 
     return names
     
 @app.post("/create/")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(
+    file: UploadFile = File(...),
+    username: str = Form(...),
+    pat: str = Form(...)
+):
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file uploaded")
+
+    g = Github(pat)
+    id_repo = g.get_repo(f"{username}/repo1")
+    store_repo = g.get_repo(f"{username}/repo2")
 
     contents = await file.read()
     file_data = base64.b64encode(contents).decode()
@@ -100,7 +98,10 @@ async def upload_file(file: UploadFile = File(...)):
     return {"message": "File uploaded and record created", "filename": id_commit_message, "data": file_data}
 
 @app.post("/download/")
-async def download(id: str):
+async def download(id: str, username: str = Query(...), pat: str = Query(...)):
+    g = Github(pat)
+    store_repo = g.get_repo(f"{username}/repo2")
+
     if '+' in id:
         sha_start, sha_end, file_name = id.split('+')
         commits = store_repo.get_commits(sha_end)
