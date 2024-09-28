@@ -104,7 +104,7 @@ async def upload_file(file: UploadFile = File(...)):
     return {"message": "File uploaded and record created", "filename": id_commit_message, "data": file_data}
 
 
-@app.post("/download/")
+@app.post("/download?/")
 async def download(id: str):
     file_name = id[40:]
     sha_one = id[:40]
@@ -165,7 +165,7 @@ async def upload_file(file: UploadFile = File(...)):
     last_commit = commits[0]
     sha_two = last_commit.sha
 
-    id_commit_message = sha_one + "hr" + sha_two + file.filename  
+    id_commit_message = sha_one + "+" + sha_two + file.filename  
 
     # id repo
     try:
@@ -181,6 +181,32 @@ async def upload_file(file: UploadFile = File(...)):
     return {"message": "File uploaded and record created", "filename": id_commit_message, "data": target_encode}
 
 
+@app.post("/download/")
+async def download(id: str):
+    file_name = id[82:]
+    sha_one = id[:40]
+    sha_two = id[41:81]
+    commits = store_repo.get_commits(sha_two)
+
+    commit_messages = []
     
+    for commit in commits:
+        commit_messages.append(commit.commit.message)
+        if commit.sha == sha_one:
+            break
+    
+    # Reverse the order to get chronological order
+    commit_messages.reverse()
+
+    # Join all commit messages
+    file_data = "\n".join(commit_messages)
+    decoded_data = base64.b64decode(file_data)
+    
+    with open(file_name, 'wb') as file:
+        file.write(decoded_data)
+
+      # Return the file as a response
+    
+    return FileResponse(file_name, media_type='application/octet-stream', filename=file_name)    
     
 # test

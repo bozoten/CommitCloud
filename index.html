@@ -92,7 +92,14 @@
                 files.forEach(file => {
                     const li = document.createElement('li');
                     const fileNameSpan = document.createElement('span');
-                    fileNameSpan.textContent = file.substring(40);
+
+                    if ((file[40] === '+' || file[40] === 'h')) {
+                        // If the 41st character is 'h', slice the first 82 characters
+                        fileNameSpan.textContent = file.substring(82);
+                    } else {
+                        // Otherwise, slice the first 40 characters
+                        fileNameSpan.textContent = file.substring(40);
+                    }
                     
                     const downloadBtn = document.createElement('button');
                     downloadBtn.textContent = 'Download';
