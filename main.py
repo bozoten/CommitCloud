@@ -7,6 +7,7 @@ from github import Github
 from dotenv import load_dotenv
 import base64
 from fastapi.middleware.cors import CORSMiddleware
+
 load_dotenv()
 
 
@@ -121,10 +122,12 @@ async def download(id: str):
     decoded_data = base64.b64decode(file_data)
 
     with open(file_name, 'wb') as file:
-        file.write(decoded_data)
+        file.write(decoded_data)    
 
     response = FileResponse(file_name, media_type='application/octet-stream', filename=file_name)
 
-    
+    async def delete():
+        os.remove(file_name)
+    response.background = delete    
 
     return response

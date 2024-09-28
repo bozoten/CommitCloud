@@ -73,7 +73,7 @@
                 });
                 
                 const result = await response.json();
-                alert(`File uploaded successfully: ${result.filename}`);
+                alert(`File uploaded successfully: ${result.filename.substring(82)}`);
                 getAllFiles();
             } catch (error) {
                 console.error('Error:', error);
@@ -121,7 +121,7 @@
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
-            a.download = fileId.substring(40); 
+            a.download = fileId.substring(82); 
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
